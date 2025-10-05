@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>John Doe - Elite Creative Developer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <script type="importmap">
+    {
+      "imports": {
+        "@google/genai": "https://esm.sh/@google/genai@^1.13.0",
+        "three/": "https://esm.sh/three@^0.179.1/",
+        "three": "https://esm.sh/three@^0.179.1",
+        "gsap/": "https://esm.sh/gsap@^3.13.0/",
+        "gsap": "https://esm.sh/gsap@^3.13.0"
+      }
+    }
+    </script>
+
+    <style>
+        :root {
+            --dark-bg: #030712;
+            --light-slate: #e2e8f0;
+            --slate: #94a3b8;
+            --indigo: #818cf8;
+            --indigo-dark: #4f46e5;
+            --card-bg: #111827;
+            --neon-glow: 0 0 10px rgba(129, 140, 248, 0.8);
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--dark-bg);
+            color: var(--light-slate);
+            overflow-x: hidden;
+            cursor: none;
+        }
+        a, button {
+            cursor: none;
+        }
+        .webgl-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            z-index: 1;
+        }
+        .content-wrapper {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+        }
+        .glass-effect {
+            background: rgba(3, 7, 18, 0.7);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .project-card {
+            background-color: var(--card-bg);
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            transform-style: preserve-3d;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        }
+        .project-card:hover {
+            box-shadow: var(--neon-glow), 0 0 30px rgba(129, 140, 248, 0.3);
+            transform: translateY(-8px);
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #111827; }
+        ::-webkit-scrollbar-thumb { background: var(--indigo-dark); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--indigo); }
+        
+        /* Custom Cursor */
+        .cursor {
+            position: fixed;
+            background-color: var(--indigo);
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            transform: translate(-50%, -50%);
+            transition: width 0.3s, height 0.3s, background-color 0.3s, opacity 0.3s;
+            mix-blend-mode: difference;
+        }
+        .cursor-outline {
+            position: fixed;
+            width: 40px;
+            height: 40px;
+            border: 2px solid var(--indigo);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            transform: translate(-50%, -50%);
+            transition: all 0.2s ease-out;
+        }
+        .cursor-active {
+            width: 60px;
+            height: 60px;
+            background-color: rgba(129, 140, 248, 0.1);
+            border-color: rgba(129, 140, 248, 0.5);
+        }
+        .cursor-click {
+            width: 30px;
+            height: 30px;
+            background-color: rgba(129, 140, 248, 0.3);
+        }
+
+        /* Cursor Light Flare */
+        .cursor-light-flare {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 800px;
+            height: 800px;
+            background: radial-gradient(circle, rgba(129, 140, 248, 0.1) 0%, rgba(129, 140, 248, 0) 60%);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 1; /* Above canvas, below content */
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+        body:hover .cursor-light-flare {
+            opacity: 1;
+        }
+        
+        /* Advanced Text Animation */
+        .line-wrap {
+            overflow: hidden;
+            height: 1.2em;
+            display: inline-block;
+            vertical-align: top;
+        }
+        .line-wrap > * {
+            transform: translateY(100%);
+            display: inline-block;
+        }
+        
+        /* Horizontal Scroll Section */
+        #projects-container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            overflow: hidden;
+        }
+        #projects-wrapper {
+            display: flex;
+            padding: 0 10vw;
+            gap: 4rem;
+        }
+        #projects-wrapper .project-card {
+            flex: 0 0 30vw;
+            min-width: 350px;
+            height: 70vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Magnetic Button Effect */
+        .magnetic-link {
+            position: relative;
+            display: inline-block;
+            transition: transform 0.2s ease-out;
+        }
+        .magnetic-link:hover {
+            transform: translate(var(--tx, 0), var(--ty, 0)) scale(1.05);
+        }
+
+        /* Gradient Text */
+        .gradient-text {
+            background: linear-gradient(90deg, #818cf8, #c7d2fe);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        /* Glowing Border */
+        .glow-border {
+            position: relative;
+        }
+        .glow-border::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: inherit;
+            padding: 1px;
+            background: linear-gradient(135deg, rgba(129, 140, 248, 0.4), rgba(129, 140, 248, 0));
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none;
+        }
+
+        /* Animated Underline */
+        .underline-animation {
+            position: relative;
+        }
+        .underline-animation::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: -4px;
+            left: 0;
+            background-color: var(--indigo);
+            transition: width 0.3s ease;
+        }
+        .underline-animation:hover::after {
+            width: 100%;
+        }
+
+        /* Floating Animation */
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+        .floating {
+            animation: float 6s ease-in-out infinite;
+        }
+
+        /* Pulse Animation */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        /* Skill Card Shimmer Hover Effect */
+        .skill-card {
+            background-color: var(--card-bg);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+        }
+        .skill-card > * {
+            position: relative;
+            z-index: 2;
+        }
+        .skill-card::after {
+            content: "";
+            position: absolute;
+            z-index: -1;
+            inset: -3px;
+            border-radius: inherit;
+            background: conic-gradient(from 180deg at 50% 50%, #a78bfa, #7dd3fc, #f472b6, #a78bfa);
+            opacity: 0;
+            transition: opacity 0.4s ease-out;
+            animation: rotate-shimmer 3s linear infinite;
+        }
+        @keyframes rotate-shimmer {
+            100% { transform: rotate(360deg); }
+        }
+        .skill-card:hover::after {
+            opacity: 1;
+        }
+        .skill-card:hover {
+            transform: translateY(-5px);
+        }
+
+        /* Project Image Overlay */
+        .project-image-container {
+            position: relative;
+            overflow: hidden;
+            height: 250px;
+        }
+        .project-image-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to top, rgba(17, 24, 39, 0.9) 0%, transparent 50%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .project-card:hover .project-image-overlay {
+            opacity: 1;
+        }
+
+        /* Tag Styles */
+        .tag {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            background: rgba(129, 140, 248, 0.1);
+            border: 1px solid rgba(129, 140, 248, 0.2);
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            color: var(--indigo);
+        }
+
+        /* Responsive Adjustments */
+        @media (max-width: 768px) {
+            #projects-wrapper .project-card {
+                flex: 0 0 80vw;
+                height: 60vh;
+            }
+            .cursor, .cursor-outline, .cursor-light-flare {
+                display: none;
+            }
+            body {
+                cursor: auto;
+            }
+        }
+
+        /* Scroll Indicator */
+        .scroll-indicator {
+            position: fixed;
+            right: 2rem;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+        }
+        .scroll-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: var(--slate);
+            opacity: 0.5;
+            transition: all 0.3s ease;
+        }
+        .scroll-dot.active {
+            background-color: var(--indigo);
+            opacity: 1;
+            transform: scale(1.3);
+        }
+
+        /* Noise Texture */
+        .noise::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%' height='100%' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        /* Preloader */
+        #preloader {
+            transition: opacity 0.5s ease-in-out, visibility 0.5s ease-in-out;
+        }
+        #preloader.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        /* AI Chat Assistant */
+        #ai-chat-button {
+            animation: pulse-glow 2s infinite;
+        }
+        @keyframes pulse-glow {
+            0%, 100% {
+                box-shadow: 0 0 0 0 rgba(129, 140, 248, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 15px rgba(129, 140, 248, 0);
+            }
+        }
+        #ai-chat-modal.visible #ai-chat-container {
+            opacity: 1;
+            transform: scale(1);
+        }
+        #ai-chat-messages {
+            scrollbar-width: thin;
+            scrollbar-color: var(--indigo-dark) var(--card-bg);
+        }
+        #ai-chat-messages::-webkit-scrollbar { width: 6px; }
+        #ai-chat-messages::-webkit-scrollbar-track { background: var(--card-bg); }
+        #ai-chat-messages::-webkit-scrollbar-thumb { background: var(--indigo-dark); border-radius: 10px; }
+        
+        .chat-message {
+            display: flex;
+            gap: 1rem;
+            max-width: 90%;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeIn 0.5s forwards;
+        }
+
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .chat-message.user {
+            margin-left: auto;
+            flex-direction: row-reverse;
+        }
+        .chat-message .avatar {
+            flex-shrink: 0;
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 9999px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .chat-message .message-content {
+            padding: 0.75rem 1rem;
+            border-radius: 0.75rem;
+            max-width: fit-content;
+            word-wrap: break-word;
+        }
+        .chat-message.ai .message-content {
+            background-color: var(--card-bg);
+            border-top-left-radius: 0;
+        }
+        .chat-message.user .message-content {
+            background-color: var(--indigo-dark);
+            color: white;
+            border-top-right-radius: 0;
+        }
+        .typing-indicator span {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--slate);
+            animation: typing-bounce 1.2s infinite ease-in-out;
+        }
+        .typing-indicator span:nth-child(2) {
+            animation-delay: -1.0s;
+        }
+        .typing-indicator span:nth-child(3) {
+            animation-delay: -0.8s;
+        }
+        @keyframes typing-bounce {
+            0%, 60%, 100% {
+                transform: translateY(0);
+            }
+            30% {
+                transform: translateY(-8px);
+            }
+        }
+        
+        /* Contact Form Floating Labels */
+        .form-group {
+            position: relative;
+        }
+        .form-input {
+            transition: border-color 0.2s;
+        }
+        .form-label {
+            position: absolute;
+            left: 1rem;
+            top: 0.8rem;
+            color: var(--slate);
+            pointer-events: none;
+            transition: all 0.2s ease-out;
+            background-color: var(--dark-bg);
+        }
+        .form-input:focus + .form-label,
+        .form-input:not(:placeholder-shown) + .form-label {
+            top: -0.6rem;
+            left: 0.75rem;
+            font-size: 0.75rem;
+            padding: 0 0.25rem;
+            color: var(--indigo);
+        }
+        .form-input:focus {
+            border-color: var(--indigo);
+        }
+    </style>
+<link rel="stylesheet" href="/index.css">
+</head>
+<body class="antialiased noise">
+    <!-- Preloader -->
+    <div id="preloader" class="fixed inset-0 z-[100] flex items-center justify-center bg-dark-bg">
+        <div class="preloader-logo text-6xl font-black gradient-text">JD.</div>
+    </div>
+
+    <!-- Custom Cursor -->
+    <div class="cursor-outline"></div>
+    <div class="cursor"></div>
+    <div class="cursor-light-flare"></div>
+    
+    <!-- Scroll Indicator -->
+    <div class="scroll-indicator">
+        <div class="scroll-dot active" data-section="hero"></div>
+        <div class="scroll-dot" data-section="about"></div>
+        <div class="scroll-dot" data-section="skills"></div>
+        <div class="scroll-dot" data-section="projects"></div>
+        <div class="scroll-dot" data-section="contact"></div>
+    </div>
+
+    <!-- 3D Background -->
+    <canvas class="webgl-canvas"></canvas>
+
+    <!-- Header -->
+    <header id="header" class="glass-effect fixed top-0 left-0 right-0 z-50">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <a href="#" class="text-2xl font-bold text-white tracking-wider magnetic-link hover:text-indigo-400 transition-colors">
+                <span class="gradient-text">JD.</span>
+            </a>
+            <nav class="hidden md:flex space-x-8 items-center">
+                <a href="#about" class="nav-link text-slate-300 hover:text-white transition underline-animation magnetic-link">About</a>
+                <a href="#skills" class="nav-link text-slate-300 hover:text-white transition underline-animation magnetic-link">Skills</a>
+                <a href="#projects" class="nav-link text-slate-300 hover:text-white transition underline-animation magnetic-link">Projects</a>
+                <a href="#contact" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-6 rounded-lg transition glow-border magnetic-link group relative overflow-hidden">
+                    <span class="relative z-10">Contact</span>
+                    <span class="absolute inset-0 bg-gradient-to-r from-indigo-500 to-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
+                </a>
+            </nav>
+            <button id="mobile-menu-button" class="md:hidden text-white magnetic-link">
+                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+                </svg>
+            </button>
+        </div>
+        <div id="mobile-menu" class="hidden md:hidden px-6 pb-4 space-y-2"></div>
+    </header>
+    
+    <div class="content-wrapper">
+        <!-- Hero Section -->
+        <section id="hero" class="relative h-screen flex items-center justify-center text-center overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-full z-0 opacity-20">
+                <div class="absolute top-1/4 left-1/4 w-32 h-32 rounded-full bg-indigo-500 filter blur-3xl opacity-40"></div>
+                <div class="absolute bottom-1/3 right-1/4 w-48 h-48 rounded-full bg-purple-500 filter blur-3xl opacity-30"></div>
+                <div class="absolute top-1/3 right-1/3 w-24 h-24 rounded-full bg-blue-400 filter blur-3xl opacity-40"></div>
+            </div>
+            
+            <div class="relative z-10 px-6 max-w-6xl mx-auto">
+                <div class="mb-8">
+                    <span class="text-indigo-400 font-medium tracking-wider">CREATIVE DEVELOPER</span>
+                    <h1 class="text-5xl md:text-7xl lg:text-8xl font-black text-white leading-tight mb-6 animated-title">
+                        <span class="gradient-text">John Doe</span>
+                    </h1>
+                    <p class="text-xl md:text-2xl text-slate-300 max-w-3xl mx-auto mb-8 animated-subtitle">
+                        Crafting <span class="text-indigo-300 font-medium">immersive digital experiences</span> at the intersection of design and technology.
+                    </p>
+                </div>
+                
+                <div class="flex flex-col sm:flex-row justify-center items-center gap-4">
+                    <a href="#projects" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-8 rounded-full text-lg transition-all duration-300 transform hover:scale-105 glow-border magnetic-link group relative overflow-hidden">
+                        <span class="relative z-10 flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+                            </svg>
+                            Explore My Work
+                        </span>
+                        <span class="absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
+                    </a>
+                    <a href="#contact" class="border border-indigo-400 text-indigo-400 hover:bg-indigo-400/10 font-medium py-4 px-8 rounded-full text-lg transition-all duration-300 transform hover:scale-105 glow-border magnetic-link">
+                        Let's Connect
+                    </a>
+                </div>
+                
+                <div class="absolute bottom-10 left-0 right-0 flex justify-center">
+                    <a href="#about" class="text-slate-400 hover:text-white transition-colors magnetic-link animate-bounce">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+                        </svg>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- About Section -->
+        <section id="about" class="container mx-auto px-6 py-24 lg:py-32 scroll-mt-20">
+            <div class="grid md:grid-cols-5 gap-12 items-center">
+                <div class="md:col-span-2 relative">
+                    <div class="relative floating">
+                        <img src="https://placehold.co/600x600/111827/e2e8f0?text=John+Doe" alt="John Doe Portrait" class="rounded-2xl w-full h-auto shadow-2xl shadow-indigo-900/40 glow-border">
+                        <div class="absolute -inset-4 border-2 border-indigo-400/30 rounded-2xl -z-10"></div>
+                        <div class="absolute -bottom-6 -right-6 bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium">
+                            <div class="flex items-center gap-2">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                </svg>
+                                <span>3D Developer</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="md:col-span-3">
+                    <div class="flex items-center gap-2 mb-4">
+                        <div class="w-10 h-px bg-indigo-400"></div>
+                        <span class="text-indigo-400 font-medium tracking-wider">ABOUT ME</span>
+                    </div>
+                    <h2 class="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-6 animated-title">
+                        Merging <span class="gradient-text">Design</span> and <span class="gradient-text">Technology</span>
+                    </h2>
+                    <div class="space-y-6">
+                        <p class="text-slate-400 text-lg leading-relaxed">
+                            I'm a <span class="text-indigo-300 font-medium">creative developer</span> who lives at the intersection of logic and creativity. My passion is to build things that are not only technically robust and performant but also aesthetically pleasing and intuitive to use.
+                        </p>
+                        <p class="text-slate-400 leading-relaxed">
+                            With over <span class="text-white font-medium">7 years</span> of experience in the industry, I've worked on everything from complex back-end systems to pixel-perfect front-end interfaces and interactive 3D scenes. I love the challenge of bringing ambitious ideas to life on the web.
+                        </p>
+                        <div class="pt-4">
+                            <a href="#" class="inline-flex items-center text-indigo-400 hover:text-indigo-300 font-medium transition-colors magnetic-link">
+                                <span>View Full Resume</span>
+                                <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                                </svg>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Skills Section -->
+        <section id="skills" class="container mx-auto px-6 py-24 lg:py-32 scroll-mt-20">
+            <div class="max-w-4xl mx-auto text-center mb-16">
+                <div class="flex justify-center items-center gap-2 mb-4">
+                    <div class="w-10 h-px bg-indigo-400"></div>
+                    <span class="text-indigo-400 font-medium tracking-wider">EXPERTISE</span>
+                    <div class="w-10 h-px bg-indigo-400"></div>
+                </div>
+                <h2 class="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4 animated-title">
+                    Core <span class="gradient-text">Competencies</span>
+                </h2>
+                <p class="text-slate-400 max-w-2xl mx-auto">
+                    The tools and technologies I use to bring ideas to life
+                </p>
+            </div>
+            
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+                <!-- Skill cards injected by JS -->
+            </div>
+        </section>
+
+        <!-- Projects Section (Horizontal Scroll) -->
+        <section id="projects" class="relative">
+            <div class="container mx-auto px-6 py-12 lg:py-20">
+                <div class="max-w-4xl mx-auto text-center mb-16">
+                    <div class="flex justify-center items-center gap-2 mb-4">
+                        <div class="w-10 h-px bg-indigo-400"></div>
+                        <span class="text-indigo-400 font-medium tracking-wider">PORTFOLIO</span>
+                        <div class="w-10 h-px bg-indigo-400"></div>
+                    </div>
+                    <h2 class="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4 animated-title">
+                        Featured <span class="gradient-text">Projects</span>
+                    </h2>
+                    <p class="text-slate-400 max-w-2xl mx-auto">
+                        A selection of my most challenging and rewarding work
+                    </p>
+                </div>
+            </div>
+            
+            <div id="projects-container">
+                <div id="projects-wrapper">
+                    <!-- Project cards injected by JS -->
+                </div>
+            </div>
+            
+            <div class="container mx-auto px-6 py-12 text-center">
+                <a href="#" class="inline-flex items-center text-indigo-400 hover:text-indigo-300 font-medium transition-colors magnetic-link text-lg">
+                    <span>View All Projects</span>
+                    <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                    </svg>
+                </a>
+            </div>
+        </section>
+
+        <!-- Contact Section -->
+        <section id="contact" class="container mx-auto px-6 py-24 lg:py-32 scroll-mt-20">
+            <div class="max-w-4xl mx-auto">
+                <div class="text-center mb-16">
+                    <div class="flex justify-center items-center gap-2 mb-4">
+                        <div class="w-10 h-px bg-indigo-400"></div>
+                        <span class="text-indigo-400 font-medium tracking-wider">GET IN TOUCH</span>
+                        <div class="w-10 h-px bg-indigo-400"></div>
+                    </div>
+                    <h2 class="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4 animated-title">
+                        Let's Build <span class="gradient-text">Something</span> Amazing
+                    </h2>
+                    <p class="text-slate-400 max-w-2xl mx-auto">
+                        Have a project in mind or just want to say hello? My inbox is always open.
+                    </p>
+                </div>
+                
+                <div class="grid md:grid-cols-2 gap-12">
+                    <div>
+                        <form id="contact-form" class="space-y-8">
+                            <div class="form-group">
+                                <input type="text" id="name" name="name" class="form-input w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg focus:ring-0 focus:outline-none text-white placeholder-transparent transition-all duration-200" placeholder="Your Name" required>
+                                <label for="name" class="form-label">Your Name</label>
+                            </div>
+                            <div class="form-group">
+                                <input type="email" id="email" name="email" class="form-input w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg focus:ring-0 focus:outline-none text-white placeholder-transparent transition-all duration-200" placeholder="Email Address" required>
+                                <label for="email" class="form-label">Email Address</label>
+                            </div>
+                             <div class="form-group">
+                                <textarea id="message" name="message" rows="5" class="form-input w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg focus:ring-0 focus:outline-none text-white placeholder-transparent transition-all duration-200" placeholder="Your Message" required></textarea>
+                                <label for="message" class="form-label">Your Message</label>
+                            </div>
+                            <button type="submit" id="contact-submit-button" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-6 rounded-lg transition-all duration-300 transform hover:scale-[1.02] glow-border magnetic-link group relative overflow-hidden disabled:bg-slate-500 disabled:cursor-not-allowed">
+                                <span class="relative z-10">Send Message</span>
+                                <span class="absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
+                            </button>
+                        </form>
+                    </div>
+                    
+                    <div class="space-y-8">
+                        <div>
+                            <h3 class="text-xl font-bold text-white mb-4">Contact Information</h3>
+                            <div class="space-y-4">
+                                <div class="flex items-start gap-4">
+                                    <div class="mt-1 p-2 bg-indigo-500/10 rounded-lg text-indigo-400">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <p class="text-slate-400 text-sm">Email</p>
+                                        <a href="mailto:john@example.com" class="text-white hover:text-indigo-400 transition-colors">john@example.com</a>
+                                    </div>
+                                </div>
+                                <div class="flex items-start gap-4">
+                                    <div class="mt-1 p-2 bg-indigo-500/10 rounded-lg text-indigo-400">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <p class="text-slate-400 text-sm">Phone</p>
+                                        <a href="tel:+1234567890" class="text-white hover:text-indigo-400 transition-colors">+1 (234) 567-890</a>
+                                    </div>
+                                </div>
+                                <div class="flex items-start gap-4">
+                                    <div class="mt-1 p-2 bg-indigo-500/10 rounded-lg text-indigo-400">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <p class="text-slate-400 text-sm">Location</p>
+                                        <p class="text-white">San Francisco, CA</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <h3 class="text-xl font-bold text-white mb-4">Connect With Me</h3>
+                            <div class="flex gap-4">
+                                <a href="#" class="p-3 bg-slate-800 hover:bg-indigo-600 rounded-lg text-white transition-all duration-300 transform hover:scale-110 magnetic-link">
+                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                                    </svg>
+                                </a>
+                                <a href="#" class="p-3 bg-slate-800 hover:bg-indigo-600 rounded-lg text-white transition-all duration-300 transform hover:scale-110 magnetic-link">
+                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M19 0h-14c-2.761 0-4 1.239-4 3v14c0 1.657 1.343 3 3 3h14c2.761 0 4-1.239 4-3v-14c0-1.657-1.343-3-3-3zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
+                                    </svg>
+                                </a>
+                                <a href="#" class="p-3 bg-slate-800 hover:bg-indigo-600 rounded-lg text-white transition-all duration-300 transform hover:scale-110 magnetic-link">
+                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"/>
+                                    </svg>
+                                </a>
+                                <a href="#" class="p-3 bg-slate-800 hover:bg-indigo-600 rounded-lg text-white transition-all duration-300 transform hover:scale-110 magnetic-link">
+                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm-2 16h-2v-6h2v6zm-1-6.891c-.607 0-1.1-.496-1.1-1.109 0-.612.492-1.109 1.1-1.109s1.1.497 1.1 1.109c0 .613-.493 1.109-1.1 1.109zm8 6.891h-1.998v-2.861c0-1.881-2.002-1.722-2.002 0v2.861h-2v-6h2v1.093c.872-1.616 4-1.736 4 1.548v3.359z"/>
+                                    </svg>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800 py-12">
+        <div class="container mx-auto px-6 text-center">
+            <div class="flex justify-center mb-6">
+                <a href="#" class="text-2xl font-bold text-white tracking-wider hover:text-indigo-400 transition-colors">
+                    <span class="gradient-text">JD.</span>
+                </a>
+            </div>
+            <p class="text-slate-400 mb-6">
+                Crafting digital experiences that inspire and engage.
+            </p>
+            <p class="text-slate-500 text-sm">
+                &copy; 2023 John Doe. All rights reserved.
+            </p>
+        </div>
+    </footer>
+
+    <!-- Project Modal -->
+    <div id="project-modal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 transition-opacity" aria-hidden="true">
+                <div class="absolute inset-0 bg-black/80 backdrop-blur-sm"></div>
+            </div>
+            
+            <div class="inline-block align-bottom bg-slate-900 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full relative">
+                <button id="modal-close" class="absolute top-4 right-4 p-2 rounded-full bg-slate-800 hover:bg-slate-700 transition-colors text-slate-400 hover:text-white">
+                    <span class="sr-only">Close</span>
+                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+                
+                <div class="px-6 py-8">
+                    <div class="grid md:grid-cols-2 gap-8">
+                        <div>
+                            <img id="modal-image" src="" alt="" class="rounded-lg w-full h-auto shadow-lg">
+                        </div>
+                        <div>
+                            <h3 id="modal-title" class="text-2xl font-bold text-white mb-2"></h3>
+                            <div id="modal-tags" class="flex flex-wrap gap-2 mb-4"></div>
+                            <div class="mb-6">
+                                <h4 class="text-sm font-medium text-slate-400 mb-2">THE CHALLENGE</h4>
+                                <p id="modal-challenge" class="text-slate-300"></p>
+                            </div>
+                            <div>
+                                <h4 class="text-sm font-medium text-slate-400 mb-2">THE SOLUTION</h4>
+                                <p id="modal-solution" class="text-slate-300"></p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-8 flex justify-end">
+                        <a href="#" id="modal-link" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 transition-colors">
+                            Visit Project
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Chat Assistant -->
+    <button id="ai-chat-button" aria-label="Open AI assistant" class="fixed bottom-8 right-8 z-50 bg-indigo-600 hover:bg-indigo-700 text-white w-16 h-16 rounded-full flex items-center justify-center shadow-lg transform hover:scale-110 transition-transform duration-300">
+        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a2 2 0 01-2-2V10a2 2 0 012-2h8z"></path></svg>
+    </button>
+
+    <div id="ai-chat-modal" class="fixed inset-0 z-[60] hidden flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="ai-chat-title">
+        <div id="ai-chat-backdrop" class="fixed inset-0 bg-black/60 backdrop-blur-sm"></div>
+        <div id="ai-chat-container" class="relative z-10 w-full max-w-2xl h-[80vh] bg-slate-900/80 backdrop-blur-xl border border-slate-700 rounded-2xl flex flex-col shadow-2xl shadow-indigo-900/50 transform scale-95 opacity-0 transition-all duration-300">
+            <div class="flex-shrink-0 p-4 border-b border-slate-700 flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707.707"></path></svg>
+                    </div>
+                    <div>
+                        <h3 id="ai-chat-title" class="text-white font-bold text-lg">JD - AI Assistant</h3>
+                        <p class="text-slate-400 text-sm">Ask me about John's work!</p>
+                    </div>
+                </div>
+                <button id="ai-chat-close" aria-label="Close AI assistant" class="p-2 rounded-full text-slate-400 hover:text-white hover:bg-slate-700 transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div id="ai-chat-messages" class="flex-grow p-6 overflow-y-auto space-y-6">
+                <!-- Messages will be injected here -->
+            </div>
+            <div class="flex-shrink-0 p-4 border-t border-slate-700">
+                <form id="ai-chat-form" class="flex items-center gap-4">
+                    <input type="text" id="ai-chat-input" placeholder="e.g., What are his strongest skills?" class="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-white placeholder-slate-500 transition-all duration-200" autocomplete="off">
+                    <button type="submit" aria-label="Send message" class="bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-500 disabled:cursor-not-allowed text-white w-14 h-[50px] rounded-lg transition-all duration-300 flex items-center justify-center flex-shrink-0">
+                         <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M3.105 3.105a1 1 0 011.414 0L19 17.586V4a1 1 0 112 0v14a1 1 0 01-1 1H3a1 1 0 01-1-1V4a1 1 0 011-1h13.586L3.105 4.515a1 1 0 010-1.414z" clip-rule="evenodd" fill-rule="evenodd" transform="rotate(-45 10 10)"></path>
+                        </svg>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <script type="module" src="./index.tsx"></script>
+<script type="module" src="/index.tsx"></script>
+</body>
+</html>
