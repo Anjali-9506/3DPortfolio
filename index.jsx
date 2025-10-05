@@ -7,7 +7,7 @@ import * as THREE from 'three';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
-import { GoogleGenAI, Chat } from "@google/genai";
+import { GoogleGenAI } from "@google/genai";
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { ScrollToPlugin } from 'gsap/ScrollToPlugin';
@@ -73,16 +73,16 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Gemini AI Chat Assistant ---
     const chatButton = document.getElementById('ai-chat-button');
     const chatModal = document.getElementById('ai-chat-modal');
-    const chatForm = document.getElementById('ai-chat-form') as HTMLFormElement | null;
+    const chatForm = document.getElementById('ai-chat-form');
     
     if (chatButton && chatModal && chatForm) {
         const chatClose = document.getElementById('ai-chat-close');
         const chatBackdrop = document.getElementById('ai-chat-backdrop');
-        const chatInput = document.getElementById('ai-chat-input') as HTMLInputElement;
+        const chatInput = document.getElementById('ai-chat-input');
         const chatMessages = document.getElementById('ai-chat-messages');
-        const chatSubmitButton = chatForm.querySelector('button[type="submit"]') as HTMLButtonElement;
+        const chatSubmitButton = chatForm.querySelector('button[type="submit"]');
 
-        let chat: Chat;
+        let chat;
         try {
             const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
             const systemInstruction = `You are JD, an AI assistant for John Doe, a creative developer. You are friendly, witty, and knowledgeable about his skills, projects, and experience. Your goal is to answer questions from potential recruiters or clients in a way that highlights John's strengths.
@@ -163,13 +163,13 @@ If you don't know the answer, politely say that it's beyond your knowledge but y
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
-        function setFormState(isLoading: boolean) {
+        function setFormState(isLoading) {
             if (!chatInput || !chatSubmitButton) return;
             chatInput.disabled = isLoading;
             chatSubmitButton.disabled = isLoading;
         }
 
-        function addUserMessage(message: string) {
+        function addUserMessage(message) {
             if (!chatMessages) return;
             chatMessages.innerHTML += `
                 <div class="chat-message user">
@@ -179,7 +179,7 @@ If you don't know the answer, politely say that it's beyond your knowledge but y
             scrollChatToBottom();
         }
 
-        function addBotMessage(message: string, isStreaming = false) {
+        function addBotMessage(message, isStreaming = false) {
             if (!chatMessages) return null;
             const botMessageId = `bot-message-${Date.now()}`;
             chatMessages.innerHTML += `
@@ -214,7 +214,7 @@ If you don't know the answer, politely say that it's beyond your knowledge but y
             }
         }
 
-        async function handleChatSubmit(e: Event) {
+        async function handleChatSubmit(e) {
             e.preventDefault();
             if (!chatInput) return;
             const message = chatInput.value.trim();
@@ -252,7 +252,7 @@ If you don't know the answer, politely say that it's beyond your knowledge but y
 
 
     // --- 3D Background Scene ---
-    const canvas = document.querySelector('.webgl-canvas') as HTMLCanvasElement;
+    const canvas = document.querySelector('.webgl-canvas');
     if (canvas) {
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -370,14 +370,13 @@ If you don't know the answer, politely say that it's beyond your knowledge but y
             contact: new THREE.Color('#f59e0b'),
         };
 
-        const allMaterials = [particleMaterial, ...objectsGroup.children.map(c => (c as THREE.Mesh).material as THREE.Material)];
+        const allMaterials = [particleMaterial, ...objectsGroup.children.map(c => c.material)];
 
-        const changeSceneColor = (color: THREE.Color) => {
+        const changeSceneColor = (color) => {
             allMaterials.forEach(material => {
                 // All materials in the scene (MeshBasicMaterial, PointsMaterial) have a `color` property.
-                // We cast the material to access this property since the base THREE.Material type doesn't include it.
                 if (material) {
-                     gsap.to((material as THREE.MeshBasicMaterial).color, {
+                     gsap.to(material.color, {
                         r: color.r,
                         g: color.g,
                         b: color.b,
@@ -416,7 +415,7 @@ If you don't know the answer, politely say that it's beyond your knowledge but y
         });
         
         const cursor = { x: 0, y: 0 };
-        window.addEventListener('mousemove', (event: MouseEvent) => {
+        window.addEventListener('mousemove', (event) => {
             cursor.x = event.clientX / window.innerWidth - 0.5;
             cursor.y = event.clientY / window.innerHeight - 0.5;
             gsap.to(objectsGroup.rotation, {
@@ -440,12 +439,12 @@ If you don't know the answer, politely say that it's beyond your knowledge but y
     }
 
     // --- Custom Cursor & Light Flare---
-    const cursorDot = document.querySelector('.cursor') as HTMLElement | null;
-    const cursorOutline = document.querySelector('.cursor-outline') as HTMLElement | null;
-    const lightFlare = document.querySelector('.cursor-light-flare') as HTMLElement | null;
+    const cursorDot = document.querySelector('.cursor');
+    const cursorOutline = document.querySelector('.cursor-outline');
+    const lightFlare = document.querySelector('.cursor-light-flare');
 
     if (cursorDot && cursorOutline) {
-        window.addEventListener('mousemove', (e: MouseEvent) => {
+        window.addEventListener('mousemove', (e) => {
             const { clientX, clientY } = e;
             gsap.to(cursorDot, { x: clientX, y: clientY, duration: 0.2, ease: 'power2.out' });
             gsap.to(cursorOutline, { x: clientX, y: clientY, duration: 0.4, ease: 'power2.out' });
@@ -466,9 +465,9 @@ If you don't know the answer, politely say that it's beyond your knowledge but y
         });
     }
     
-    document.querySelectorAll('.magnetic-link').forEach((button: Element) => {
-        const htmlButton = button as HTMLElement;
-        htmlButton.addEventListener('mousemove', (e: MouseEvent) => {
+    document.querySelectorAll('.magnetic-link').forEach((button) => {
+        const htmlButton = button;
+        htmlButton.addEventListener('mousemove', (e) => {
             const rect = htmlButton.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
@@ -489,9 +488,9 @@ If you don't know the answer, politely say that it's beyond your knowledge but y
     });
 
     // --- Advanced Text Animations ---
-    function splitTextIntoSpans(selector: string) {
-        document.querySelectorAll(selector).forEach((element: Element) => {
-            const htmlElement = element as HTMLElement;
+    function splitTextIntoSpans(selector) {
+        document.querySelectorAll(selector).forEach((element) => {
+            const htmlElement = element;
             const text = htmlElement.textContent;
             if (!text) return;
             htmlElement.innerHTML = '';
@@ -520,7 +519,7 @@ If you don't know the answer, politely say that it's beyond your knowledge but y
     splitTextIntoSpans('.animated-title');
     
     // Animate non-hero titles on scroll
-    gsap.utils.toArray('section:not(#hero) .animated-title').forEach((title: any) => {
+    gsap.utils.toArray('section:not(#hero) .animated-title').forEach((title) => {
         const chars = title.querySelectorAll('.char');
         gsap.from(chars, {
             y: '100%',
@@ -536,7 +535,7 @@ If you don't know the answer, politely say that it's beyond your knowledge but y
         });
     });
     
-    gsap.utils.toArray('.animated-subtitle').forEach((subtitle: any) => {
+    gsap.utils.toArray('.animated-subtitle').forEach((subtitle) => {
         gsap.from(subtitle, {
             opacity: 0,
             y: 20,
@@ -569,9 +568,9 @@ If you don't know the answer, politely say that it's beyond your knowledge but y
 
         // --- Project Card Tilt Effect ---
         const projectCards = document.querySelectorAll('#projects-wrapper .project-card');
-        projectCards.forEach((card: Element) => {
-            const htmlCard = card as HTMLElement;
-            htmlCard.addEventListener('mousemove', (e: MouseEvent) => {
+        projectCards.forEach((card) => {
+            const htmlCard = card;
+            htmlCard.addEventListener('mousemove', (e) => {
                 const rect = htmlCard.getBoundingClientRect();
                 const x = e.clientX - rect.left;
                 const y = e.clientY - rect.top;
@@ -618,8 +617,8 @@ If you don't know the answer, politely say that it's beyond your knowledge but y
             });
         });
         
-        scrollDots.forEach((dot: Element) => {
-            const htmlDot = dot as HTMLElement;
+        scrollDots.forEach((dot) => {
+            const htmlDot = dot;
             htmlDot.addEventListener('click', () => {
                 if (htmlDot.dataset.section) {
                     const section = document.getElementById(htmlDot.dataset.section);
@@ -659,7 +658,7 @@ If you don't know the answer, politely say that it's beyond your knowledge but y
             </div>
         `).join('');
 
-        gsap.utils.toArray('.skill-card').forEach((card: any, i) => {
+        gsap.utils.toArray('.skill-card').forEach((card, i) => {
             gsap.from(card, {
                 opacity: 0,
                 y: 50,
@@ -768,14 +767,17 @@ If you don't know the answer, politely say that it's beyond your knowledge but y
 
         document.querySelectorAll('.project-details-button').forEach(button => {
             button.addEventListener('click', () => {
-                const projectCard = button.closest('.project-card') as HTMLElement | null;
+                const projectCard = button.closest('.project-card');
                 if (projectCard && projectCard.dataset.projectId) {
-                    const projectId = parseInt(projectCard.dataset.projectId);
+                    const projectId = parseInt(projectCard.dataset.projectId, 10);
                     const project = projects.find(p => p.id === projectId);
                     
                     if (project) {
-                        (document.getElementById('modal-image') as HTMLImageElement).src = project.img;
-                        (document.getElementById('modal-image') as HTMLImageElement).alt = project.title;
+                        const modalImage = document.getElementById('modal-image');
+                        if (modalImage) {
+                            modalImage.src = project.img;
+                            modalImage.alt = project.title;
+                        }
                         
                         const modalTitle = document.getElementById('modal-title');
                         if (modalTitle) modalTitle.textContent = project.title;
@@ -789,7 +791,7 @@ If you don't know the answer, politely say that it's beyond your knowledge but y
                         const modalSolution = document.getElementById('modal-solution');
                         if (modalSolution) modalSolution.textContent = project.solution;
 
-                        const modalLink = document.getElementById('modal-link') as HTMLAnchorElement | null;
+                        const modalLink = document.getElementById('modal-link');
                         if(modalLink) modalLink.href = project.link;
                         
                         modal.classList.remove('hidden');
@@ -820,15 +822,15 @@ If you don't know the answer, politely say that it's beyond your knowledge but y
     if (contactForm) {
         contactForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            const submitButton = document.getElementById('contact-submit-button') as HTMLButtonElement;
+            const submitButton = document.getElementById('contact-submit-button');
             if (submitButton) {
                 submitButton.disabled = true;
-                submitButton.querySelector('span')!.textContent = 'Sending...';
+                submitButton.querySelector('span').textContent = 'Sending...';
                 
                 // Simulate network request
                 setTimeout(() => {
                     submitButton.disabled = false;
-                    submitButton.querySelector('span')!.textContent = 'Send Message';
+                    submitButton.querySelector('span').textContent = 'Send Message';
                     // Here you would add success/error handling
                 }, 2000);
             }
